@@ -2,7 +2,7 @@ package db.everything;
 
 import java.util.Objects;
 
-public class File {
+public class IFile {
     private String name;
     private String path;
     private long size;
@@ -13,7 +13,7 @@ public class File {
         return path + " " + name;
     }
 
-    public File(String name, String path, long size, String date) {
+    public IFile(String name, String path, long size, String date) {
         this.name = name;
         this.path = path;
         this.size = size;
@@ -24,7 +24,7 @@ public class File {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        File file = (File) o;
+        IFile file = (IFile) o;
         return name.equals(file.name) &&
                 path.equals(file.path);
     }

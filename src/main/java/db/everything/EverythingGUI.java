@@ -6,7 +6,10 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 public class EverythingGUI extends JFrame {
@@ -15,7 +18,7 @@ public class EverythingGUI extends JFrame {
     private final JMenuBar mnuBar = new JMenuBar();
     private final JMenu menu = new JMenu("File");
     private final JMenuItem mnuIndex = new JMenuItem("Index All Files");
-
+    private JPopupMenu contextMenu ;
     private final JTextField txtSearch = new JTextField();
     private final JTable tblFiles = new JTable(new Object[0][0],
             new String[]{"Name", "Path", "Size", "Date"});
@@ -33,6 +36,28 @@ public class EverythingGUI extends JFrame {
         gui.pack();
         gui.setLocationRelativeTo(null);
         gui.setVisible(true);
+    }
+
+    private void buildContextMenu(String fullPath,String dir) {
+        contextMenu =new JPopupMenu();
+        JMenuItem ctmOpen = new JMenuItem("Open");
+        JMenuItem ctmOpenPath = new JMenuItem("Open Path");
+        ctmOpen.addActionListener(actionEvent -> {
+            try {
+                Desktop.getDesktop().open(new File(fullPath));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        ctmOpenPath.addActionListener(actionEvent -> {
+            try {
+                Desktop.getDesktop().open(new File(dir));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        contextMenu.add(ctmOpen);
+        contextMenu.add(ctmOpenPath);
     }
 
     private void makeMainPanel() {
@@ -79,6 +104,31 @@ public class EverythingGUI extends JFrame {
                 textChanged();
             }
         });
+
+        tblFiles.addMouseListener(
+                new MouseAdapter() {
+                    @Override
+                    public void mousePressed(MouseEvent mouseEvent) {
+                        int row = tblFiles.rowAtPoint(mouseEvent.getPoint());
+
+                        String dir = tblFiles.getValueAt(row, 1).toString();
+                        String name = tblFiles.getValueAt(row, 0).toString();
+                        String fullPath = dir + '/' + name;
+
+                        if (!mouseEvent.isPopupTrigger()) {
+                            try {
+                                Desktop.getDesktop().open(new File(fullPath));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            buildContextMenu(fullPath, dir);
+                            contextMenu.setVisible(true);
+                            contextMenu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
+                        }
+                    }
+                }
+        );
     }
 
     private void buildMenuBar() {
@@ -92,7 +142,7 @@ public class EverythingGUI extends JFrame {
     }
 
     private void updateFilesList(String query) {
-        List<File> list = fileService.search(query);
+        List<IFile> list = fileService.search(query);
         showDataInTable(list);
     }
 
@@ -100,8 +150,8 @@ public class EverythingGUI extends JFrame {
         updateFilesList(null);
     }
 
-    private void showDataInTable(List<File> list) {
-        tblFiles.setModel(new DefaultTableModel(list.stream().map(File::getValuesArray).toArray(String[][]::new),
+    private void showDataInTable(List<IFile> list) {
+        tblFiles.setModel(new DefaultTableModel(list.stream().map(IFile::getValuesArray).toArray(String[][]::new),
                 new String[]{"Name", "Path", "Size", "Date"}));
     }
 }

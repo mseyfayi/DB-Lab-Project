@@ -50,17 +50,17 @@ class FileService implements Serializable {
     void reindexTable() {
         dropTable();
         createTable();
-        List<File> allFiles = getFiles();
+        List<IFile> allFiles = getFiles();
         insertAll(allFiles);
     }
 
-    void insertAll(List<File> files) {
-        for (File file : files) {
+    void insertAll(List<IFile> files) {
+        for (IFile file : files) {
             insert(file);
         }
     }
 
-    void insert(File file) {
+    void insert(IFile file) {
         database.insert(tableName, new String[]{"Name", "Path", "Size", "Date"}, file.getValuesArray());
     }
 
@@ -69,8 +69,8 @@ class FileService implements Serializable {
         return text == null || text.length() == 0 ? null : "Name regexp '.*" + text + ".*'";
     }
 
-    List<File> search(@Nullable String text) {
-        List<File> list = new ArrayList<>();
+    List<IFile> search(@Nullable String text) {
+        List<IFile> list = new ArrayList<>();
 
         ResultSet rs = database.search(tableName, createWhereClaus(text));
         try {
@@ -80,7 +80,7 @@ class FileService implements Serializable {
                 long size = rs.getLong("Size");
                 String date = rs.getString("Date");
 
-                File file = new File(name, path, size, date);
+                IFile file = new IFile(name, path, size, date);
                 list.add(file);
             }
         } catch (SQLException e) {
@@ -90,18 +90,18 @@ class FileService implements Serializable {
         return list;
     }
 
-    private List<File> getFiles() {
+    private List<IFile> getFiles() {
         String myDocuments = System.getProperty("user.home");
 
         String dateFormat = "yyyy-MM-dd HH:mm:ss";
         SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
-        List<File> results = new ArrayList<>();
+        List<IFile> results = new ArrayList<>();
         try (Stream<Path> files = Files.list(Paths.get(myDocuments))) {
             results = files
                     .map(f -> {
                         try {
                             BasicFileAttributes attribs = Files.readAttributes(f, BasicFileAttributes.class);
-                            return new File(
+                            return new IFile(
                                     f.toFile().getName(),
                                     f.getParent().toFile().getAbsolutePath(),
                                     attribs.size(),
