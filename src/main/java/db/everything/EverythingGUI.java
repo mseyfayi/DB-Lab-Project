@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class EverythingGUI extends JFrame {
+    private FileService fileService = FileService.getInstance();
+
     private final JMenuBar mnuBar = new JMenuBar();
     private final JMenu menu = new JMenu("File");
     private final JMenuItem mnuIndex = new JMenuItem("Index All Files");
@@ -56,16 +58,16 @@ public class EverythingGUI extends JFrame {
         setContentPane(panel);
 
         tblFiles.setShowGrid(false);
-//        updateFilesList("");
+        updateFilesList();
     }
 
     private void setUpHandlers() {
         mnuIndex.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                // TODO Remove this code and add code for indexing all files in the database:
-                JOptionPane.showMessageDialog(null, "Index All Files",
-                        "", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Index All Files", "", JOptionPane.INFORMATION_MESSAGE);
+                fileService.reindexTable();
+                updateFilesList();
             }
         });
 
@@ -94,13 +96,16 @@ public class EverythingGUI extends JFrame {
     }
 
     private void textChanged() {
-        // TODO: search in the db for files whose name contain txtSearch's text
         updateFilesList(txtSearch.getText());
     }
 
     private void updateFilesList(String query) {
         // TODO this is just a demo (it shows all files in My Documents). Make appropriate changes:
         myDocumentsFiles();
+    }
+
+    private void updateFilesList() {
+        updateFilesList("");
     }
 
     // TODO This is just a demo (to show you how you can fill a JTable):
@@ -127,8 +132,6 @@ public class EverythingGUI extends JFrame {
                     }).collect(Collectors.toList());
 
 
-            tblFiles.setModel(new DefaultTableModel(results.toArray(new Object[0][]),
-                    new String[]{"Name", "Path", "Size", "Date"}));
         } catch (IOException e) {
             e.printStackTrace();
         }

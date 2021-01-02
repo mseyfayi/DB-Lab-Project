@@ -3,6 +3,7 @@ package db.everything;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 
 public class Database {
     private static Database instance;
@@ -25,6 +26,30 @@ public class Database {
 
     void createTable(String name, String... columns) {
         String query = buildCreateQuery(name, columns);
+        execute(query);
+    }
+
+    void dropTable(String name) {
+        String query = "DROP TABLE " + name;
+        execute(query);
+
+    }
+
+    private String buildCreateQuery(String name, String[] columns) {
+        StringBuilder queryBuilder = new StringBuilder("CREATE TABLE " + name + " (");
+        buildComaSeparatedString(columns, queryBuilder);
+        queryBuilder.append(")");
+
+        return queryBuilder.toString();
+    }
+
+    void insert(String tableName, String[] columns, String[] values) {
+        String[] newValues = Arrays.stream(values).map(v -> '\'' + v + '\'').toArray(String[]::new);
+        String query = buildInsertQuery(tableName, columns, newValues);
+        execute(query);
+    }
+
+    private void execute(String query) {
         try {
             statement.execute(query);
         } catch (SQLException e) {
@@ -32,15 +57,21 @@ public class Database {
         }
     }
 
-    private String buildCreateQuery(String name, String[] columns) {
-        StringBuilder queryBuilder = new StringBuilder("CREATE TABLE " + name + " (\n");
-        for (int i = 0; i < columns.length; i++) {
-            queryBuilder.append(columns[i]);
-            if (i < columns.length - 1)
-                queryBuilder.append(",");
-        }
+    private String buildInsertQuery(String tableName, String[] columns, String[] values) {
+        StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + tableName + " (");
+        buildComaSeparatedString(columns, queryBuilder);
+        queryBuilder.append(") " + "VALUES (");
+        buildComaSeparatedString(values, queryBuilder);
         queryBuilder.append(")");
 
         return queryBuilder.toString();
+    }
+
+    private void buildComaSeparatedString(String[] columns, StringBuilder queryBuilder) {
+        for (int i = 0; i < columns.length; i++) {
+            queryBuilder.append(columns[i]);
+            if (i < columns.length - 1)
+                queryBuilder.append(", ");
+        }
     }
 }
