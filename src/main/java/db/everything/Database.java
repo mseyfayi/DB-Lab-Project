@@ -1,6 +1,9 @@
 package db.everything;
 
+import com.sun.istack.internal.Nullable;
+
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
@@ -50,11 +53,22 @@ public class Database {
     }
 
     private void execute(String query) {
+        System.out.println(query);
         try {
             statement.execute(query);
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    private ResultSet executeQuery(String query) {
+        System.out.println(query);
+        try {
+            return statement.executeQuery(query);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private String buildInsertQuery(String tableName, String[] columns, String[] values) {
@@ -73,5 +87,21 @@ public class Database {
             if (i < columns.length - 1)
                 queryBuilder.append(", ");
         }
+    }
+
+    private String buildSelectQuery(String tableName, @Nullable String whereClaus) {
+        StringBuilder queryBuilder = new StringBuilder("SELECT * FROM " + tableName);
+
+        if (whereClaus != null) {
+            queryBuilder.append(" WHERE ");
+            queryBuilder.append(whereClaus);
+        }
+
+        return queryBuilder.toString();
+    }
+
+    ResultSet search(String tableName, @Nullable String whereClaus) {
+        String query = buildSelectQuery(tableName, whereClaus);
+        return executeQuery(query);
     }
 }

@@ -12,5 +12,6 @@ repositories {
 }
 
 dependencies {
+    compile 'com.google.code.findbugs:jsr305:3.0.2'
     compile group: 'com.h2database', name: 'h2', version: '1.4.200'
 }

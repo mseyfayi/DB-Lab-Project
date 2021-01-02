@@ -7,15 +7,7 @@ import javax.swing.event.MouseInputAdapter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class EverythingGUI extends JFrame {
     private FileService fileService = FileService.getInstance();
@@ -100,40 +92,16 @@ public class EverythingGUI extends JFrame {
     }
 
     private void updateFilesList(String query) {
-        // TODO this is just a demo (it shows all files in My Documents). Make appropriate changes:
-        myDocumentsFiles();
+        List<File> list = fileService.search(query);
+        showDataInTable(list);
     }
 
     private void updateFilesList() {
-        updateFilesList("");
+        updateFilesList(null);
     }
 
-    // TODO This is just a demo (to show you how you can fill a JTable):
-    private void myDocumentsFiles() {
-        String myDocuments = System.getProperty("user.home");
-
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-
-        try (Stream<Path> files = Files.list(Paths.get(myDocuments))) {
-            List<Object[]> results = files
-                    .map(f -> {
-                        try {
-                            BasicFileAttributes attribs = Files.readAttributes(f, BasicFileAttributes.class);
-
-                            return new Object[]{f.toFile().getName(),
-                                    f.getParent().toFile().getAbsolutePath(),
-                                    attribs.size(),
-                                    sdf.format(attribs.creationTime().toMillis())
-                            };
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        return null;
-                    }).collect(Collectors.toList());
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void showDataInTable(List<File> list) {
+        tblFiles.setModel(new DefaultTableModel(list.stream().map(File::getValuesArray).toArray(String[][]::new),
+                new String[]{"Name", "Path", "Size", "Date"}));
     }
 }
