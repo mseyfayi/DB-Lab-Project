@@ -107,7 +107,6 @@ class FileService {
         return results;
     }
 
-
     private String createDeleteWhereClaus(String name) {
         return String.format("Path = '%s' AND Name = '%s'", path.toString(), name);
     }
