@@ -89,19 +89,24 @@ public class Database {
         }
     }
 
-    private String buildSelectQuery(String tableName, @Nullable String whereClaus) {
+    private String buildSelectQuery(String tableName, @Nullable String whereClaus, @Nullable String sort) {
         StringBuilder queryBuilder = new StringBuilder("SELECT * FROM " + tableName);
 
-        if (whereClaus != null) {
+        if (whereClaus != null && whereClaus.length() > 0) {
             queryBuilder.append(" WHERE ");
             queryBuilder.append(whereClaus);
+        }
+
+        if (sort != null && sort.length() > 0) {
+            queryBuilder.append(" ORDER BY ");
+            queryBuilder.append(sort);
         }
 
         return queryBuilder.toString();
     }
 
-    ResultSet search(String tableName, @Nullable String whereClaus) {
-        String query = buildSelectQuery(tableName, whereClaus);
+    ResultSet search(String tableName, @Nullable String whereClaus, @Nullable String sort) {
+        String query = buildSelectQuery(tableName, whereClaus, sort);
         return executeQuery(query);
     }
 }

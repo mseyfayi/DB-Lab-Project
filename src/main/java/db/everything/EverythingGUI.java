@@ -15,15 +15,31 @@ import java.util.List;
 public class EverythingGUI extends JFrame {
     private FileService fileService = FileService.getInstance();
 
+    private final String[] columns = {"Name", "Path", "Size", "Date"};
+
     private final JMenuBar mnuBar = new JMenuBar();
-    private final JMenu menu = new JMenu("File");
-    private final JMenuItem mnuIndex = new JMenuItem("Index All Files");
-    private JPopupMenu contextMenu ;
+
+    private final JMenu menuFile = new JMenu("File");
+    private final JMenuItem mnuFileIndex = new JMenuItem("Index All Files");
+
+    private final JMenu menuSort = new JMenu("Sort");
+    private final JMenuItem[] mnuSortItems = new JMenuItem[4];
+
+    private final JMenuItem mnuSortNone = new JMenuItem("None");
+    private String selectedSort = "";
+
+    private JPopupMenu contextMenu;
     private final JTextField txtSearch = new JTextField();
-    private final JTable tblFiles = new JTable(new Object[0][0],
-            new String[]{"Name", "Path", "Size", "Date"});
+    private final JTable tblFiles = new JTable(new Object[0][0], columns);
 
     private JScrollPane scrollPane = new JScrollPane(tblFiles);
+
+    private final Panel panel = new Panel();
+
+    private EverythingGUI() {
+        for (int i = 0; i < mnuSortItems.length; i++)
+            mnuSortItems[i] = new JMenuItem(columns[i]);
+    }
 
     public static void main(String[] args) {
         EverythingGUI gui = new EverythingGUI();
@@ -38,8 +54,8 @@ public class EverythingGUI extends JFrame {
         gui.setVisible(true);
     }
 
-    private void buildContextMenu(String fullPath,String dir) {
-        contextMenu =new JPopupMenu();
+    private void buildContextMenu(String fullPath, String dir) {
+        contextMenu = new JPopupMenu();
         JMenuItem ctmOpen = new JMenuItem("Open");
         JMenuItem ctmOpenPath = new JMenuItem("Open Path");
         ctmOpen.addActionListener(actionEvent -> {
@@ -61,7 +77,6 @@ public class EverythingGUI extends JFrame {
     }
 
     private void makeMainPanel() {
-        final Panel panel = new Panel();
         panel.setPreferredSize(new Dimension(800, 500));
 
         LayoutManager layoutManager = new BorderLayout();
@@ -79,7 +94,7 @@ public class EverythingGUI extends JFrame {
     }
 
     private void setUpHandlers() {
-        mnuIndex.addMouseListener(new MouseInputAdapter() {
+        mnuFileIndex.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 JOptionPane.showMessageDialog(null, "Index All Files", "", JOptionPane.INFORMATION_MESSAGE);
@@ -87,6 +102,26 @@ public class EverythingGUI extends JFrame {
                 updateFilesList();
             }
         });
+
+        mnuSortNone.addMouseListener(new MouseInputAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                selectedSort = "";
+                updateFilesList(txtSearch.getText());
+            }
+        });
+
+        for (JMenuItem mnuSortItem : mnuSortItems) {
+            mnuSortItem.addMouseListener(
+                    new MouseInputAdapter() {
+                        @Override
+                        public void mousePressed(MouseEvent e) {
+                            selectedSort = mnuSortItem.getText();
+                            updateFilesList(txtSearch.getText());
+                        }
+                    }
+            );
+        }
 
         txtSearch.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -116,10 +151,15 @@ public class EverythingGUI extends JFrame {
                         String fullPath = dir + '/' + name;
 
                         if (!mouseEvent.isPopupTrigger()) {
-                            try {
-                                Desktop.getDesktop().open(new File(fullPath));
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                            if (contextMenu != null)
+                                contextMenu.setVisible(false);
+
+                            if (mouseEvent.getClickCount() == 2) {
+                                try {
+                                    Desktop.getDesktop().open(new File(fullPath));
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         } else {
                             buildContextMenu(fullPath, dir);
@@ -133,8 +173,15 @@ public class EverythingGUI extends JFrame {
 
     private void buildMenuBar() {
         setJMenuBar(mnuBar);
-        mnuBar.add(menu);
-        menu.add(mnuIndex);
+
+        mnuBar.add(menuFile);
+        menuFile.add(mnuFileIndex);
+
+        mnuBar.add(menuSort);
+        menuSort.add(mnuSortNone);
+        for (JMenuItem mnuSortItem : mnuSortItems) {
+            menuSort.add(mnuSortItem);
+        }
     }
 
     private void textChanged() {
@@ -142,7 +189,7 @@ public class EverythingGUI extends JFrame {
     }
 
     private void updateFilesList(String query) {
-        List<IFile> list = fileService.search(query);
+        List<IFile> list = fileService.search(query, selectedSort);
         showDataInTable(list);
     }
 
@@ -151,7 +198,15 @@ public class EverythingGUI extends JFrame {
     }
 
     private void showDataInTable(List<IFile> list) {
-        tblFiles.setModel(new DefaultTableModel(list.stream().map(IFile::getValuesArray).toArray(String[][]::new),
-                new String[]{"Name", "Path", "Size", "Date"}));
+        String[][] matrix = list.stream().map(IFile::getValuesArray).toArray(String[][]::new);
+        DefaultTableModel tableModel = new DefaultTableModel(matrix, columns) {
+            @Override
+            public boolean isCellEditable(int i, int i1) {
+                return false;
+            }
+        };
+        tblFiles.setModel(tableModel);
+        tblFiles.revalidate();
+        panel.repaint();
     }
 }

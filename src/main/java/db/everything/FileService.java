@@ -69,10 +69,10 @@ class FileService implements Serializable {
         return text == null || text.length() == 0 ? null : "Name regexp '.*" + text + ".*'";
     }
 
-    List<IFile> search(@Nullable String text) {
+    List<IFile> search(@Nullable String text, @Nullable String sort) {
         List<IFile> list = new ArrayList<>();
 
-        ResultSet rs = database.search(tableName, createWhereClaus(text));
+        ResultSet rs = database.search(tableName, createWhereClaus(text), sort);
         try {
             while (rs != null && rs.next()) {
                 String name = rs.getString("Name");
