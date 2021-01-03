@@ -97,7 +97,7 @@ public class Database {
             queryBuilder.append(whereClaus);
         }
 
-        if (sort != null && sort.length() > 0) {
+        if (sort != null && sort.length() > 0 && !sort.equals("None")) {
             queryBuilder.append(" ORDER BY ");
             queryBuilder.append(sort);
         }

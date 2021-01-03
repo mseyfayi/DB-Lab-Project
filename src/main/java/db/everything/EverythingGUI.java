@@ -23,9 +23,8 @@ public class EverythingGUI extends JFrame {
     private final JMenuItem mnuFileIndex = new JMenuItem("Index All Files");
 
     private final JMenu menuSort = new JMenu("Sort");
-    private final JMenuItem[] mnuSortItems = new JMenuItem[4];
-
-    private final JMenuItem mnuSortNone = new JMenuItem("None");
+    private final ButtonGroup mnuSortGroup = new ButtonGroup();
+    private final JMenuItem[] mnuSortItems = new JRadioButtonMenuItem[5];
     private String selectedSort = "";
 
     private JPopupMenu contextMenu;
@@ -37,8 +36,9 @@ public class EverythingGUI extends JFrame {
     private final Panel panel = new Panel();
 
     private EverythingGUI() {
-        for (int i = 0; i < mnuSortItems.length; i++)
-            mnuSortItems[i] = new JMenuItem(columns[i]);
+        mnuSortItems[0] = new JRadioButtonMenuItem("None", true);
+        for (int i = 0; i < columns.length; i++)
+            mnuSortItems[i + 1] = new JRadioButtonMenuItem(columns[i], false);
     }
 
     public static void main(String[] args) {
@@ -117,6 +117,8 @@ public class EverythingGUI extends JFrame {
                         @Override
                         public void mousePressed(MouseEvent e) {
                             selectedSort = mnuSortItem.getText();
+                            changeSortCheckboxesState(mnuSortItem);
+                            menuSort.revalidate();
                             updateFilesList(txtSearch.getText());
                         }
                     }
@@ -171,6 +173,12 @@ public class EverythingGUI extends JFrame {
         );
     }
 
+    private void changeSortCheckboxesState(JMenuItem source) {
+        for (JMenuItem mnuSortItem : mnuSortItems) {
+            mnuSortItem.setSelected(source == mnuSortItem);
+        }
+    }
+
     private void buildMenuBar() {
         setJMenuBar(mnuBar);
 
@@ -178,8 +186,8 @@ public class EverythingGUI extends JFrame {
         menuFile.add(mnuFileIndex);
 
         mnuBar.add(menuSort);
-        menuSort.add(mnuSortNone);
         for (JMenuItem mnuSortItem : mnuSortItems) {
+            mnuSortGroup.add(mnuSortItem);
             menuSort.add(mnuSortItem);
         }
     }
