@@ -65,14 +65,19 @@ class FileService implements Serializable {
     }
 
     private @Nullable
-    String createWhereClaus(@Nullable String text) {
-        return text == null || text.length() == 0 ? null : "Name regexp '.*" + text + ".*'";
+    String createWhereClaus(@Nullable String text, boolean isMatchCase) {
+        if (text == null || text.length() == 0)
+            return null;
+        else if (!isMatchCase)
+            return "lower(Name) regexp '.*" + text.toLowerCase() + ".*'";
+        else
+            return "Name regexp '.*" + text + ".*'";
     }
 
-    List<IFile> search(@Nullable String text, @Nullable String sort) {
+    List<IFile> search(@Nullable String text, @Nullable String sort, boolean isMatchCase) {
         List<IFile> list = new ArrayList<>();
 
-        ResultSet rs = database.search(tableName, createWhereClaus(text), sort);
+        ResultSet rs = database.search(tableName, createWhereClaus(text, isMatchCase), sort);
         try {
             while (rs != null && rs.next()) {
                 String name = rs.getString("Name");

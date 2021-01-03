@@ -27,6 +27,10 @@ public class EverythingGUI extends JFrame {
     private final JMenuItem[] mnuSortItems = new JRadioButtonMenuItem[5];
     private String selectedSort = "";
 
+    private final JMenu menuSearch = new JMenu("Search");
+    private final JMenuItem mnuSearchMatchCase = new JCheckBoxMenuItem("Match Case", false);
+    private boolean isMatchCheckSelected = false;
+
     private JPopupMenu contextMenu;
     private final JTextField txtSearch = new JTextField();
     private final JTable tblFiles = new JTable(new Object[0][0], columns);
@@ -103,10 +107,10 @@ public class EverythingGUI extends JFrame {
             }
         });
 
-        mnuSortNone.addMouseListener(new MouseInputAdapter() {
+        mnuSearchMatchCase.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                selectedSort = "";
+                isMatchCheckSelected = !isMatchCheckSelected;
                 updateFilesList(txtSearch.getText());
             }
         });
@@ -190,6 +194,9 @@ public class EverythingGUI extends JFrame {
             mnuSortGroup.add(mnuSortItem);
             menuSort.add(mnuSortItem);
         }
+
+        mnuBar.add(menuSearch);
+        menuSearch.add(mnuSearchMatchCase);
     }
 
     private void textChanged() {
@@ -197,7 +204,8 @@ public class EverythingGUI extends JFrame {
     }
 
     private void updateFilesList(String query) {
-        List<IFile> list = fileService.search(query, selectedSort);
+        System.out.println("mnuSearchMatchCase.isSelected() " + isMatchCheckSelected);
+        List<IFile> list = fileService.search(query, selectedSort, isMatchCheckSelected);
         showDataInTable(list);
     }
 
