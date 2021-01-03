@@ -2,22 +2,21 @@ package db.everything;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.io.Serializable;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-class FileService implements Serializable {
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+
+class FileService {
     private static FileService instance;
+    private final Path path = Paths.get(System.getProperty("user.home"));
     private Database database;
     private String tableName = "file";
 
@@ -54,18 +53,18 @@ class FileService implements Serializable {
         insertAll(allFiles);
     }
 
-    void insertAll(List<IFile> files) {
+    private void insertAll(List<IFile> files) {
         for (IFile file : files) {
             insert(file);
         }
     }
 
-    void insert(IFile file) {
+    private void insert(IFile file) {
         database.insert(tableName, new String[]{"Name", "Path", "Size", "Date"}, file.getValuesArray());
     }
 
     private @Nullable
-    String createWhereClaus(@Nullable String text, boolean isMatchCase) {
+    String createSearchWhereClaus(@Nullable String text, boolean isMatchCase) {
         if (text == null || text.length() == 0)
             return null;
         else if (!isMatchCase)
@@ -77,15 +76,15 @@ class FileService implements Serializable {
     List<IFile> search(@Nullable String text, @Nullable String sort, boolean isMatchCase) {
         List<IFile> list = new ArrayList<>();
 
-        ResultSet rs = database.search(tableName, createWhereClaus(text, isMatchCase), sort);
+        ResultSet rs = database.search(tableName, createSearchWhereClaus(text, isMatchCase), sort);
         try {
             while (rs != null && rs.next()) {
                 String name = rs.getString("Name");
-                String path = rs.getString("Path");
+                String path1 = rs.getString("Path");
                 long size = rs.getLong("Size");
                 String date = rs.getString("Date");
 
-                IFile file = new IFile(name, path, size, date);
+                IFile file = new IFile(name, path1, size, date);
                 list.add(file);
             }
         } catch (SQLException e) {
@@ -96,31 +95,58 @@ class FileService implements Serializable {
     }
 
     private List<IFile> getFiles() {
-        String myDocuments = System.getProperty("user.home");
-
-        String dateFormat = "yyyy-MM-dd HH:mm:ss";
-        SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
         List<IFile> results = new ArrayList<>();
-        try (Stream<Path> files = Files.list(Paths.get(myDocuments))) {
+        try (Stream<Path> files = Files.list(path)) {
             results = files
-                    .map(f -> {
-                        try {
-                            BasicFileAttributes attribs = Files.readAttributes(f, BasicFileAttributes.class);
-                            return new IFile(
-                                    f.toFile().getName(),
-                                    f.getParent().toFile().getAbsolutePath(),
-                                    attribs.size(),
-                                    sdf.format(attribs.creationTime().toMillis())
-                            );
-                        } catch (IOException ignored) {
-                            return null;
-                        }
-                    })
+                    .map(IFile::getIFileFromPath)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
         } catch (IOException e) {
             e.printStackTrace();
         }
         return results;
+    }
+
+
+    private String createDeleteWhereClaus(String name) {
+        return String.format("Path = '%s' AND Name = '%s'", path.toString(), name);
+    }
+
+    private void entryDelete(String name) {
+        database.delete(tableName, createDeleteWhereClaus(name));
+    }
+
+    private void entryCreate(String name) {
+        IFile newFile = IFile.getIFileFromPath(path.resolve(name));
+        assert newFile != null;
+        insert(newFile);
+    }
+
+    void fileWatch(Runnable callback) {
+        try (WatchService watchService = FileSystems.getDefault().newWatchService()) {
+            path.register(watchService, ENTRY_CREATE, ENTRY_DELETE);
+            WatchKey watchKey;
+            while ((watchKey = watchService.take()) != null) {
+                for (WatchEvent<?> event : watchKey.pollEvents()) {
+                    String fileName = event.context().toString();
+                    WatchEvent.Kind<?> kind = event.kind();
+
+                    if (fileName.equals("everythingdb.mv.db")) {
+                        continue;
+                    }
+
+                    if (kind == ENTRY_DELETE) {
+                        entryDelete(fileName);
+                    } else {
+                        entryCreate(fileName);
+                    }
+
+                    callback.run();
+                }
+                watchKey.reset();
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

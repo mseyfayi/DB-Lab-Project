@@ -45,19 +45,6 @@ public class EverythingGUI extends JFrame {
             mnuSortItems[i + 1] = new JRadioButtonMenuItem(columns[i], false);
     }
 
-    public static void main(String[] args) {
-        EverythingGUI gui = new EverythingGUI();
-        gui.setTitle("My Everything");
-        gui.setDefaultCloseOperation(EXIT_ON_CLOSE);
-        gui.setUpHandlers();
-        gui.buildMenuBar();
-        gui.makeMainPanel();
-
-        gui.pack();
-        gui.setLocationRelativeTo(null);
-        gui.setVisible(true);
-    }
-
     private void buildContextMenu(String fullPath, String dir) {
         contextMenu = new JPopupMenu();
         JMenuItem ctmOpen = new JMenuItem("Open");
@@ -204,7 +191,6 @@ public class EverythingGUI extends JFrame {
     }
 
     private void updateFilesList(String query) {
-        System.out.println("mnuSearchMatchCase.isSelected() " + isMatchCheckSelected);
         List<IFile> list = fileService.search(query, selectedSort, isMatchCheckSelected);
         showDataInTable(list);
     }
@@ -224,5 +210,33 @@ public class EverythingGUI extends JFrame {
         tblFiles.setModel(tableModel);
         tblFiles.revalidate();
         panel.repaint();
+    }
+
+    private void buildView() {
+        setTitle("My Everything");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setUpHandlers();
+        buildMenuBar();
+        makeMainPanel();
+    }
+
+    private void runWatcher() {
+        Thread thread = new Thread(() -> fileService.fileWatch(() -> updateFilesList(txtSearch.getText())));
+        thread.start();
+    }
+
+    private void run() {
+        buildView();
+
+        pack();
+        setLocationRelativeTo(null);
+        setVisible(true);
+
+        runWatcher();
+    }
+
+    public static void main(String[] args) {
+        EverythingGUI gui = new EverythingGUI();
+        gui.run();
     }
 }

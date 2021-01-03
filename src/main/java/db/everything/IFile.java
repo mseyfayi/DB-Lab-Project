@@ -1,5 +1,10 @@
 package db.everything;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.text.SimpleDateFormat;
 import java.util.Objects;
 
 public class IFile {
@@ -13,7 +18,7 @@ public class IFile {
         return path + " " + name;
     }
 
-    public IFile(String name, String path, long size, String date) {
+    IFile(String name, String path, long size, String date) {
         this.name = name;
         this.path = path;
         this.size = size;
@@ -34,39 +39,22 @@ public class IFile {
         return Objects.hash(name, path);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public long getSize() {
-        return size;
-    }
-
-    public void setSize(long size) {
-        this.size = size;
-    }
-
-    public String getDate() {
-        return date;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
-    }
-
-    public String[] getValuesArray() {
+    String[] getValuesArray() {
         return new String[]{name, path, size + "", date};
+    }
+
+    static IFile getIFileFromPath(Path path) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        try {
+            BasicFileAttributes attribs = Files.readAttributes(path, BasicFileAttributes.class);
+            return new IFile(
+                    path.toFile().getName(),
+                    path.getParent().toFile().getAbsolutePath(),
+                    attribs.size(),
+                    sdf.format(attribs.creationTime().toMillis())
+            );
+        } catch (IOException ignored) {
+            return null;
+        }
     }
 }

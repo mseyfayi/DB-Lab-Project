@@ -52,6 +52,15 @@ public class Database {
         execute(query);
     }
 
+    void delete(String tableName, String whereClaus) {
+        String query = buildDeleteQuery(tableName, whereClaus);
+        execute(query);
+    }
+
+    private String buildDeleteQuery(String tableName, String whereClaus) {
+        return String.format("DELETE FROM %s WHERE %s", tableName, whereClaus);
+    }
+
     private void execute(String query) {
         System.out.println(query);
         try {
