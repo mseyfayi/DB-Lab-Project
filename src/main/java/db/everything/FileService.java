@@ -11,8 +11,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.*;
 
 class FileService {
     private static FileService instance;
@@ -136,7 +135,10 @@ class FileService {
 
                     if (kind == ENTRY_DELETE) {
                         entryDelete(fileName);
-                    } else {
+                    } else if (kind == ENTRY_CREATE) {
+                        entryCreate(fileName);
+                    } else if (kind == ENTRY_MODIFY) {
+                        entryDelete(fileName);
                         entryCreate(fileName);
                     }
 
